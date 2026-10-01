@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Messenger"
+description = "A single-page messaging app with simple local sign-in, mock real-time conversations, and chat history saved in the browser."
+version = "1.0.0"
+id = "artifacts/messenger-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25190
+
+[services.development]
+run = "pnpm --filter @workspace/messenger-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/messenger-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/messenger-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25190"
+BASE_PATH = "/"
