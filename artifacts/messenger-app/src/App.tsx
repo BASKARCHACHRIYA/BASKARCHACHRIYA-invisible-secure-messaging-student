@@ -2,16 +2,20 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   ArrowLeft,
   Check,
+  Crown,
   Info,
+  LoaderCircle,
   LogOut,
   MessageCircle,
   MoreHorizontal,
+  RotateCcw,
   Search,
   Send,
   Sparkles,
   UserRoundPlus,
   X,
 } from 'lucide-react';
+import { Purchases, type CustomerInfo, type Offering, type PurchasePackage } from '@/lib/mock-purchases';
 
 type Message = {
   id: string;
@@ -34,6 +38,7 @@ type LocalUser = { name: string; initials: string };
 
 const CHAT_KEY = 'messenger-local-conversations-v1';
 const USER_KEY = 'messenger-local-user-v1';
+const MOCK_REVENUECAT_API_KEY = 'revenuecat-demo-key-not-valid';
 
 const ago = (minutes: number) => Date.now() - minutes * 60_000;
 const makeMessage = (id: string, from: Message['from'], text: string, minutes: number): Message => ({
@@ -209,10 +214,51 @@ function App() {
   const [typingId, setTypingId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [mobileChat, setMobileChat] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [currentOffering, setCurrentOffering] = useState<Offering | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef(selectedId);
   selectedRef.current = selectedId;
+  const isPremium = Boolean(customerInfo?.entitlements.active.premium);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setCurrentOffering(null);
+      setCustomerInfo(null);
+      setShowPaywall(false);
+      return () => { cancelled = true; };
+    }
+
+    setCustomerInfo(null);
+    Purchases.configure({
+      apiKey: MOCK_REVENUECAT_API_KEY,
+      appUserID: `local:${user.name.trim().toLowerCase()}`,
+    });
+    void Promise.all([Purchases.getOfferings(), Purchases.getCustomerInfo()])
+      .then(([offerings, info]) => {
+        if (cancelled) return;
+        setCurrentOffering(offerings.current);
+        setCustomerInfo(info);
+      })
+      .catch(() => {
+        if (!cancelled) setToast('The local demo offering could not be loaded.');
+      });
+
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!showPaywall) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !purchaseBusy) setShowPaywall(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [showPaywall, purchaseBusy]);
 
   useEffect(() => {
     localStorage.setItem(CHAT_KEY, JSON.stringify(conversations));
@@ -311,6 +357,35 @@ function App() {
     setMobileChat(false);
   };
 
+  const purchasePremium = async (packageToPurchase: PurchasePackage) => {
+    setPurchaseBusy(true);
+    try {
+      const info = await Purchases.purchasePackage(packageToPurchase);
+      setCustomerInfo(info);
+      setShowPaywall(false);
+      setToast('Premium demo enabled on this browser. No payment was made.');
+    } catch {
+      setToast('The demo purchase could not be completed.');
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
+
+  const restorePremium = async () => {
+    setPurchaseBusy(true);
+    try {
+      const info = await Purchases.restorePurchases();
+      setCustomerInfo(info);
+      setToast(info.entitlements.active.premium
+        ? 'The local Premium demo entitlement was restored.'
+        : 'There is no Premium demo purchase to restore.');
+    } catch {
+      setToast('The demo purchase could not be restored.');
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
+
   if (!user) return <div className="messenger-app"><Login onSignIn={setUser} /></div>;
 
   return (
@@ -327,6 +402,19 @@ function App() {
           <div className="user-meta"><strong data-testid="text-username">{user.name}</strong><span>Your local space</span></div>
           <button className="icon-button" onClick={signOut} aria-label="Sign out" title="Sign out" data-testid="button-sign-out"><LogOut size={16} /></button>
         </div>
+        <button
+          className={`premium-card${isPremium ? ' premium-card-active' : ''}`}
+          type="button"
+          onClick={() => setShowPaywall(true)}
+          data-testid="button-upgrade-premium"
+        >
+          <span className="premium-card-icon"><Crown size={17} /></span>
+          <span className="premium-card-copy">
+            <strong>{isPremium ? 'Premium is active' : 'Upgrade to Premium'}</strong>
+            <small>{isPremium ? 'Local demo entitlement' : 'See the monthly demo plan'}</small>
+          </span>
+          <span className="premium-card-arrow" aria-hidden="true">→</span>
+        </button>
         <div className="section-head"><h2>Conversations</h2><span className="count-label">{conversations.length}</span></div>
         <div className="search-box">
           <Search size={15} />
@@ -395,6 +483,67 @@ function App() {
           </div>
         </> : <div className="empty-state"><div><div className="empty-ornament"><Sparkles size={27} /></div><h2>A good place to begin.</h2><p>Pick a conversation on the left and say what’s on your mind.</p></div></div>}
       </section>
+      {showPaywall && (
+        <div
+          className="paywall-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !purchaseBusy) setShowPaywall(false);
+          }}
+        >
+          <section className="paywall-sheet" role="dialog" aria-modal="true" aria-labelledby="premium-title" data-testid="dialog-premium">
+            <button className="paywall-close" type="button" onClick={() => setShowPaywall(false)} aria-label="Close Premium details" disabled={purchaseBusy} data-testid="button-close-premium">
+              <X size={18} />
+            </button>
+            <div className="paywall-mark"><Crown size={25} /></div>
+            <div className="paywall-kicker">Messenger · Premium</div>
+            <h2 id="premium-title">{isPremium ? 'Premium is active.' : 'A little more, together.'}</h2>
+            <p className="paywall-intro">
+              {isPremium
+                ? 'This browser has an active local demo entitlement.'
+                : 'Preview the in-app purchase flow with a mock RevenueCat offering.'}
+            </p>
+            {currentOffering?.availablePackages[0] ? (
+              <div className="premium-plan" data-testid="text-premium-plan">
+                <span className="premium-plan-dot"><Check size={13} /></span>
+                <span className="premium-plan-info">
+                  <strong>{currentOffering.availablePackages[0].product.title}</strong>
+                  <small>{currentOffering.availablePackages[0].product.description}</small>
+                </span>
+                <span className="premium-plan-price">
+                  <strong>{currentOffering.availablePackages[0].product.priceString}</strong>
+                  <small>/ month</small>
+                </span>
+              </div>
+            ) : (
+              <div className="premium-plan premium-plan-loading">Loading local demo offering…</div>
+            )}
+            <div className="premium-demo-note">
+              Mock Purchases configuration only. No RevenueCat project, app store, or payment is connected; this does not charge you.
+            </div>
+            <button
+              className="premium-purchase-button"
+              type="button"
+              disabled={purchaseBusy || isPremium || !currentOffering?.availablePackages[0]}
+              onClick={() => {
+                const packageToPurchase = currentOffering?.availablePackages[0];
+                if (packageToPurchase) void purchasePremium(packageToPurchase);
+              }}
+              data-testid="button-purchase-premium"
+            >
+              {purchaseBusy
+                ? <><LoaderCircle className="purchase-spinner" size={17} /> Processing demo…</>
+                : isPremium ? 'Premium enabled' : 'Try demo purchase'}
+            </button>
+            <button className="premium-restore-button" type="button" onClick={() => void restorePremium()} disabled={purchaseBusy} data-testid="button-restore-premium">
+              {purchaseBusy ? null : <RotateCcw size={14} />}
+              Restore demo purchase
+            </button>
+            <button className="premium-back-button" type="button" onClick={() => setShowPaywall(false)} disabled={purchaseBusy}>
+              Back to your conversations
+            </button>
+          </section>
+        </div>
+      )}
       {toast && <div className="toast-note" role="status" data-testid="status-toast">{toast}</div>}
     </main>
   );

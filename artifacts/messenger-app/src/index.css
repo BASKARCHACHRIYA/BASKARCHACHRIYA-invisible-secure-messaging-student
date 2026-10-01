@@ -313,6 +313,15 @@ button { cursor: pointer; }
 .panel-brand {display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;}
 .panel-brand .brand-mark{width:30px;height:30px;border-radius:10px 10px 10px 4px}
 .user-mini { display:flex;align-items:center;gap:10px;padding:10px 22px 17px;border-bottom:1px solid rgba(255,255,255,.12); }
+.premium-card { width:calc(100% - 34px);margin:13px 17px 0;padding:11px 12px;border:1px solid rgba(232,161,123,.42);border-radius:14px;background:linear-gradient(115deg,rgba(232,161,123,.18),rgba(255,255,255,.045));color:#fff8ed;display:flex;align-items:center;gap:10px;text-align:left;transition:transform .18s,border-color .18s,background .18s; }
+.premium-card:hover { transform:translateY(-1px);border-color:rgba(245,190,157,.8);background:linear-gradient(115deg,rgba(232,161,123,.24),rgba(255,255,255,.07)); }
+.premium-card-active { border-color:rgba(168,200,138,.5);background:rgba(168,200,138,.1); }
+.premium-card-icon { width:31px;height:31px;flex:none;border-radius:10px;background:var(--coral);color:var(--teal-dark);display:grid;place-items:center; }
+.premium-card-copy { flex:1;min-width:0; }
+.premium-card-copy strong,.premium-card-copy small { display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.premium-card-copy strong { font-size:11px; }
+.premium-card-copy small { margin-top:3px;font-size:9px;color:#d2ddd4; }
+.premium-card-arrow { color:#edb18c;font-size:17px;line-height:1; }
 .avatar { flex:none;width:44px;height:44px;border-radius:16px 16px 16px 6px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#244a43;background:#dfba91; }
 .avatar.small {width:36px;height:36px;border-radius:13px 13px 13px 5px;font-size:11px;}
 .avatar.tiny {width:29px;height:29px;border-radius:10px 10px 10px 4px;font-size:9px;}
@@ -375,6 +384,35 @@ button { cursor: pointer; }
 .empty-state p {font-size:13px;max-width:260px;line-height:1.65;margin:0 auto;}
 .no-results {text-align:center;color:#d2dfd5;padding:38px 20px;font-size:12px;line-height:1.6;}
 .toast-note {position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#244a43;color:#fff6ea;border-radius:30px;padding:11px 18px;font-size:12px;box-shadow:0 9px 24px #193b3440;z-index:5;animation:arrive .2s ease;}
+.paywall-backdrop { position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background:rgba(17,39,34,.57);backdrop-filter:blur(5px);animation:paywall-fade .18s ease both; }
+.paywall-sheet { position:relative;width:min(100%,430px);padding:37px 34px 30px;border:1px solid rgba(255,255,255,.7);border-radius:24px;background:var(--paper-bright);color:var(--ink);box-shadow:0 24px 80px rgba(10,34,29,.28);animation:paywall-rise .22s ease both; }
+.paywall-close { position:absolute;right:17px;top:17px;width:34px;height:34px;border:0;border-radius:11px;background:rgba(36,74,67,.07);color:var(--ink);display:grid;place-items:center;transition:background .15s; }
+.paywall-close:hover { background:rgba(36,74,67,.13); }
+.paywall-mark { width:52px;height:52px;border-radius:18px 18px 18px 6px;background:var(--coral-wash);color:#a75739;display:grid;place-items:center;margin-bottom:22px; }
+.paywall-kicker { color:#9a7058;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase; }
+.paywall-sheet h2 { margin:9px 0 8px;font:500 32px/1.07 var(--app-font-serif);letter-spacing:-.035em; }
+.paywall-intro { margin:0;color:var(--ink-soft);font-size:13px;line-height:1.6; }
+.premium-plan { margin:24px 0 14px;min-height:74px;padding:14px 15px;border:1px solid #d9d3c7;border-radius:15px;background:#fffdf8;display:flex;align-items:center;gap:11px; }
+.premium-plan-dot { width:24px;height:24px;flex:none;border-radius:50%;background:#e7efe5;color:var(--teal);display:grid;place-items:center; }
+.premium-plan-info { min-width:0;flex:1; }
+.premium-plan-info strong,.premium-plan-info small,.premium-plan-price strong,.premium-plan-price small { display:block; }
+.premium-plan-info strong { font-size:12px; }
+.premium-plan-info small { margin-top:4px;color:#818a83;font-size:10px; }
+.premium-plan-price { text-align:right;white-space:nowrap; }
+.premium-plan-price strong { font-size:14px; }
+.premium-plan-price small { margin-top:3px;color:#858e85;font-size:10px; }
+.premium-plan-loading { color:#8a9288;font-size:12px; }
+.premium-demo-note { padding:11px 12px;border-radius:11px;background:#f5f0e7;color:#7d8177;font-size:10px;line-height:1.55; }
+.premium-purchase-button { width:100%;height:48px;margin-top:17px;border:0;border-radius:12px;background:var(--teal);color:#fff9ef;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .16s,transform .16s; }
+.premium-purchase-button:hover:not(:disabled) { transform:translateY(-1px);background:var(--teal-dark); }
+.premium-purchase-button:disabled { opacity:.62;cursor:default; }
+.purchase-spinner { animation:spin .9s linear infinite; }
+.premium-restore-button,.premium-back-button { width:100%;height:39px;border:0;background:transparent;color:#61756b;font-size:11px;font-weight:650;display:flex;align-items:center;justify-content:center;gap:7px; }
+.premium-restore-button:hover:not(:disabled),.premium-back-button:hover:not(:disabled) { color:var(--teal-dark); }
+.premium-back-button { margin-top:1px;color:#8a9088;font-weight:500; }
+@keyframes paywall-fade { from{opacity:0}to{opacity:1} }
+@keyframes paywall-rise { from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes spin { to{transform:rotate(360deg)} }
 .mobile-nav {display:none;}
 @keyframes arrive {from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse {0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
@@ -387,6 +425,7 @@ button { cursor: pointer; }
   .app-shell.mobile-chat .conversation-panel{display:none}
   .app-shell.mobile-chat .chat-panel{display:flex}
   .chat-header{height:72px;padding:0 15px}
+  .paywall-sheet{padding:34px 23px 24px;border-radius:21px}
   .chat-back{display:grid}
   .chat-actions .icon-button{width:32px}
   .message-scroll{padding:22px 15px 10px}
